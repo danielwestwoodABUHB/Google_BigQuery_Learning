@@ -5,14 +5,14 @@ import seaborn as sns
 import statsmodels.api as sm
 from google.cloud import bigquery
 
-# Set the path to your Google Cloud service account key
+# Reminder to use correct download credential key
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"C:\Users\da046634\AppData\Local\Temp\MicrosoftEdgeDownloads\0edc4907-b6aa-48a7-af8c-4b7ced419855\vernal-tempo-410309-daa86de57214.json"
 
 
-# Initialize BigQuery client
+
 client = bigquery.Client()
 
-# Define your query
+
 query = """
     SELECT
         Year,
@@ -28,22 +28,17 @@ query = """
         Year, County_of_Residence
 """
 
-# Run the query and process the results
 try:
-    query_job = client.query(query)  # API request
-    results = query_job.result()     # Waits for the job to complete.
-
-    # Convert results to a DataFrame
+    query_job = client.query(query)  
+    results = query_job.result()     
     df = results.to_dataframe()
 
-    # Drop rows with missing values
+    
     df.dropna(subset=['Avg_Pre_Pregnancy_BMI', 'Avg_Birth_Weight'], inplace=True)
 
-    # Calculate the Pearson correlation coefficient
+   
     correlation = df['Avg_Pre_Pregnancy_BMI'].corr(df['Avg_Birth_Weight'])
     print(f"Pearson correlation coefficient: {correlation}")
-
-    # Optional: Visualizing the relationship
     plt.figure(figsize=(10, 6))
     sns.scatterplot(data=df, x='Avg_Pre_Pregnancy_BMI', y='Avg_Birth_Weight')
     plt.title('Scatter plot of Average Pre-Pregnancy BMI vs Average Birth Weight')
