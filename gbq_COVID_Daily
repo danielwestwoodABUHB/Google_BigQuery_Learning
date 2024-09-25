@@ -1,0 +1,28 @@
+WITH daily_counts AS (
+  SELECT 
+    date,
+    total_test_results,
+    positive,
+    negative,
+    IFNULL(positive - LAG(positive) OVER (ORDER BY date), positive) AS daily_positive,
+    IFNULL(negative - LAG(negative) OVER (ORDER BY date), negative) AS daily_negative,
+    IFNULL(total_test_results - LAG(total_test_results) OVER (ORDER BY date), total_test_results) AS daily_total_tests
+  FROM 
+    `bigquery-public-data.covid19_tracking.national_testing_and_outcomes`
+  WHERE 
+    date > '2020-02-27'
+  ORDER BY 
+    date ASC
+)
+
+SELECT 
+  date,
+  total_test_results,
+  daily_positive,
+  daily_negative,
+  daily_total_tests,
+  SAFE_MULTIPLY(SAFE_DIVIDE(daily_positive, daily_total_tests), 100) AS positive_rate_percentage
+FROM 
+  daily_counts
+ORDER BY 
+  date ASC;
