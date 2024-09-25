@@ -8,10 +8,9 @@ from prophet.plot import plot_plotly, plot_components_plotly
 # Smust update the location of this path when downloading Key from the settings in big query
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"C:\Users\da046634\AppData\Local\Temp\MicrosoftEdgeDownloads\0edc4907-b6aa-48a7-af8c-4b7ced419855\vernal-tempo-410309-daa86de57214.json"
 
-# Initialize BigQuery client
 client = bigquery.Client()
 
-# Define your query
+
 query = """
     WITH daily_counts AS (
         SELECT 
