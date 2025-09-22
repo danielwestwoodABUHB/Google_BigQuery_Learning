@@ -1,0 +1,11 @@
+# Core requirements for Google BigQuery Learning repository
+pandas>=2.0.0
+numpy>=1.20.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
+statsmodels>=0.13.0
+
+# Optional packages for enhanced functionality
+holidays>=0.20
+# google-cloud-bigquery>=3.0.0  # Uncomment when using actual BigQuery
+# prophet>=1.1.0  # Uncomment for forecasting functionality
