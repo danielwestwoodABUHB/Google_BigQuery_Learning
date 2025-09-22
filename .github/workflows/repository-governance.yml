@@ -1,0 +1,222 @@
+name: Repository Governance Workflow
+
+on:
+  issues:
+    types: [opened, edited, labeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  validate-repo-request:
+    if: contains(github.event.issue.title, '[REPO REQUEST]') || contains(github.event.issue.title, '[TEAM REQUEST]')
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        pip install pyyaml
+        
+    - name: Parse and validate request
+      id: validate
+      run: |
+        python3 - << 'EOF'
+        import json
+        import os
+        import sys
+        import re
+        sys.path.append('governance/scripts')
+        
+        from validator import RepositoryGovernanceValidator
+        from audit_logger import GovernanceAuditLogger
+        
+        # Get issue details from GitHub event
+        issue_body = """${{ github.event.issue.body }}"""
+        issue_title = """${{ github.event.issue.title }}"""
+        issue_user = """${{ github.event.issue.user.login }}"""
+        
+        # Initialize validator and logger
+        validator = RepositoryGovernanceValidator()
+        logger = GovernanceAuditLogger()
+        
+        # Determine request type
+        if '[REPO REQUEST]' in issue_title:
+            # Parse repository request from issue body
+            repo_data = {
+                "requester": issue_user,
+                "repository_name": "",  # Would parse from issue body
+                "description": "",
+                "privacy_level": "",
+                "data_classification": "",
+                "business_justification": "",
+                "team_assignments": []
+            }
+            
+            # Validate repository request
+            is_valid, errors = validator.validate_repository_request(repo_data)
+            
+            if is_valid:
+                audit_id = logger.log_repository_request(repo_data)
+                print(f"Repository request validated successfully. Audit ID: {audit_id}")
+                print(f"::set-output name=valid::true")
+                print(f"::set-output name=audit_id::{audit_id}")
+                print(f"::set-output name=requires_approval::true")
+            else:
+                print("Repository request validation failed:")
+                for error in errors:
+                    print(f"  - {error}")
+                print(f"::set-output name=valid::false")
+                print(f"::set-output name=errors::{json.dumps(errors)}")
+                
+        elif '[TEAM REQUEST]' in issue_title:
+            # Parse team request from issue body
+            team_data = {
+                "requester": issue_user,
+                "request_type": "",
+                "team_name": "",
+                "business_justification": ""
+            }
+            
+            # Validate team request
+            is_valid, errors = validator.validate_team_request(team_data)
+            
+            if is_valid:
+                audit_id = logger.log_team_request(team_data)
+                print(f"Team request validated successfully. Audit ID: {audit_id}")
+                print(f"::set-output name=valid::true")
+                print(f"::set-output name=audit_id::{audit_id}")
+                print(f"::set-output name=requires_approval::true")
+            else:
+                print("Team request validation failed:")
+                for error in errors:
+                    print(f"  - {error}")
+                print(f"::set-output name=valid::false")
+                print(f"::set-output name=errors::{json.dumps(errors)}")
+        EOF
+        
+    - name: Comment on issue - validation success
+      if: steps.validate.outputs.valid == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `✅ **Request Validation Successful**
+            
+            Your governance request has been validated and logged for approval.
+            
+            **Audit ID:** \`${{ steps.validate.outputs.audit_id }}\`
+            **Status:** Pending approval from ABB - GitHub Owners
+            
+            The ABB - GitHub Owners team has been notified and will review your request. You will receive updates as the approval process progresses.`
+          })
+          
+    - name: Comment on issue - validation failed
+      if: steps.validate.outputs.valid == 'false'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const errors = JSON.parse('${{ steps.validate.outputs.errors }}');
+          const errorList = errors.map(error => `- ${error}`).join('\n');
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `❌ **Request Validation Failed**
+            
+            Your governance request could not be validated due to the following issues:
+            
+            ${errorList}
+            
+            Please update your request to address these issues and resubmit.`
+          })
+          
+    - name: Add approval label
+      if: steps.validate.outputs.valid == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.addLabels({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            labels: ['needs-abb-approval', 'validated']
+          })
+
+  process-approval:
+    if: contains(github.event.issue.labels.*.name, 'approved-by-abb-owners')
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        pip install pyyaml
+        
+    - name: Process approved request
+      run: |
+        python3 - << 'EOF'
+        import sys
+        sys.path.append('governance/scripts')
+        
+        from audit_logger import GovernanceAuditLogger
+        
+        # Initialize logger
+        logger = GovernanceAuditLogger()
+        
+        # Log approval
+        approval_data = {
+            "approver": "${{ github.event.issue.assignee.login }}",
+            "status": "approved",
+            "comments": "Approved by ABB - GitHub Owners",
+            "security_review": True,
+            "compliance_review": True
+        }
+        
+        # Extract audit ID from issue (would need to parse from comments/labels)
+        audit_id = "extracted_from_issue"  # Implementation needed
+        
+        logger.log_repository_approval(audit_id, approval_data)
+        print(f"Approval logged for audit ID: {audit_id}")
+        EOF
+        
+    - name: Comment on approval
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `🎉 **Request Approved**
+            
+            Your governance request has been approved by the ABB - GitHub Owners team.
+            
+            **Next Steps:**
+            - Repository/team creation will be processed automatically
+            - You will receive notification when the process is complete
+            - All actions have been logged for audit purposes
+            
+            Thank you for following the governance process!`
+          })

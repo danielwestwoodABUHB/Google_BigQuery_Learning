@@ -1,0 +1,19 @@
+{
+  "requester": "alice.johnson@company.com",
+  "request_type": "add_users",
+  "team_name": "data-science-team",
+  "team_description": "Team responsible for machine learning and data science projects",
+  "repository_access": [
+    "ml-models",
+    "data-pipeline",
+    "bigquery-experiments"
+  ],
+  "permission_level": "push",
+  "users_to_add": [
+    "@bob.wilson",
+    "@carol.brown",
+    "@david.smith"
+  ],
+  "users_to_remove": [],
+  "business_justification": "Adding new data scientists to the team who will be working on ML model development and data pipeline maintenance. These team members have completed security training and have been approved by HR."
+}

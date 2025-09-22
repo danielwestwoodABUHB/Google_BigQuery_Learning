@@ -1,0 +1,74 @@
+# Repository Governance Configuration
+governance:
+  approval_groups:
+    - name: "ABB - GitHub Owners"
+      github_team: "abb-github-owners"
+      required_for:
+        - repository_creation
+        - team_creation
+        - user_access_management
+      
+  repository_requirements:
+    naming_convention:
+      prefix_required: true
+      allowed_prefixes:
+        - "data-"
+        - "analytics-"
+        - "ml-"
+        - "bigquery-"
+        - "sandbox-"
+      max_length: 50
+      
+    mandatory_fields:
+      - description
+      - privacy_level
+      - business_justification
+      - data_classification
+      - team_assignments
+      
+    privacy_levels:
+      - public
+      - internal
+      - private
+      
+    data_classifications:
+      - public
+      - internal
+      - confidential
+      - restricted
+      
+  team_requirements:
+    roles:
+      - admin
+      - maintain
+      - push
+      - triage
+      - pull
+      
+    mandatory_teams:
+      - maintainers
+      - contributors
+      
+  audit_settings:
+    log_location: "governance/audit-logs/"
+    retention_days: 2555  # 7 years
+    log_format: "json"
+    
+  notifications:
+    approval_required:
+      channels:
+        - github_issue
+        - email
+      recipients:
+        - "@abb-github-owners"
+        
+    approval_granted:
+      channels:
+        - github_issue
+        - audit_log
+        
+    repository_created:
+      channels:
+        - github_issue
+        - audit_log
+        - email

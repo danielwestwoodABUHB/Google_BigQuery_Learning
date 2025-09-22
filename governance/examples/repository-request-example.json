@@ -1,0 +1,27 @@
+{
+  "requester": "john.doe@company.com",
+  "repository_name": "bigquery-analytics-dashboard",
+  "description": "Analytics dashboard for BigQuery data visualization and reporting",
+  "privacy_level": "private",
+  "data_classification": "internal",
+  "business_justification": "Required for quarterly business analysis and executive reporting. This dashboard will provide real-time insights into business metrics and KPIs.",
+  "team_assignments": [
+    {
+      "team": "maintainers",
+      "permission": "admin"
+    },
+    {
+      "team": "contributors", 
+      "permission": "push"
+    },
+    {
+      "team": "analysts",
+      "permission": "pull"
+    }
+  ],
+  "technical_requirements": {
+    "primary_technology": "Python, BigQuery, Streamlit",
+    "integration_requirements": "BigQuery connection, Google Cloud authentication",
+    "compliance_requirements": "Data privacy compliance, access logging"
+  }
+}
